@@ -1,0 +1,205 @@
+import 'package:flutter/material.dart';
+import 'package:login_page/services/logger_service.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
+
+class MapScreen extends StatefulWidget {
+  // Çağıran dosya (emergency_screen) hata vermesin diye bu parametreleri tutuyoruz,
+  // ama çizim yaparken kullanmayacağız.
+  final LatLng selectedLocation;
+  final LatLng? userLocation;
+  final String? locationName;
+  final String? noteInfo;
+  final bool isTabView;
+
+  const MapScreen({
+    super.key,
+    required this.selectedLocation,
+    this.userLocation,
+    this.locationName,
+    this.noteInfo,
+    this.isTabView = false,
+  });
+
+  @override
+  State<MapScreen> createState() => _MapScreenState();
+}
+
+class _MapScreenState extends State<MapScreen> {
+  final MapController _mapController = MapController();
+  LatLng? _foundLocation;
+  bool _isLoadingLocation = false;
+
+  // YEDEK KONUM (GPS yoksa otel merkezi)
+  final LatLng _backupLocation = const LatLng(37.216097, 28.351872);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.userLocation == null) {
+        _findLocation();
+      } else {
+        _centerOnUser();
+      }
+    });
+  }
+
+  Future<void> _findLocation() async {
+    setState(() {
+      _isLoadingLocation = true;
+    });
+
+    try {
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        Logger.debug('Location services are disabled.');
+        return;
+      }
+
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          Logger.debug('Location permissions are denied');
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition();
+      if (mounted) {
+        setState(() {
+          _foundLocation = LatLng(position.latitude, position.longitude);
+          _mapController.move(_foundLocation!, 18.0);
+        });
+      }
+    } catch (e) {
+      Logger.debug("Error getting location: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoadingLocation = false;
+        });
+      }
+    }
+  }
+
+  // Sadece kullanıcıya odaklanan fonksiyon
+  void _centerOnUser() {
+    final LatLng displayUserLocation =
+        _foundLocation ?? widget.userLocation ?? _backupLocation;
+    _mapController.move(displayUserLocation, 18.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Hangi konumu göstereceğiz?
+    final LatLng displayUserLocation =
+        _foundLocation ?? widget.userLocation ?? _backupLocation;
+    final bool isSimulationMode =
+        _foundLocation == null && widget.userLocation == null;
+
+    return Scaffold(
+      body: Stack(
+        children: [
+          // --- 1. HARİTA ---
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              initialCenter: displayUserLocation,
+              initialZoom: 18.0,
+            ),
+            children: [
+              TileLayer(
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                userAgentPackageName: 'com.oteluygulamasi.app',
+              ),
+
+              // NOT: PolylineLayer (Kırmızı Çizgi) buradan kaldırıldı.
+              MarkerLayer(
+                markers: [
+                  // NOT: Hedef (Yeşil Kapı) ikonu kaldırıldı.
+
+                  // Sadece Kullanıcı (Mavi İnsan)
+                  Marker(
+                    point: displayUserLocation,
+                    width: 60,
+                    height: 60,
+                    child: const Icon(
+                      Icons.person_pin_circle,
+                      color: Colors.blue,
+                      size: 50,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+
+          // --- 2. GERİ DÖN BUTONU ---
+          if (!widget.isTabView)
+            Positioned(
+              top: 50,
+              left: 20,
+              child: CircleAvatar(
+                backgroundColor: Colors.black.withValues(alpha: 0.6),
+                radius: 25,
+                child: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+            ),
+
+          // --- 3. KONUMUMA GİT BUTONU ---
+          Positioned(
+            right: 20,
+            bottom: 120,
+            child: FloatingActionButton(
+              backgroundColor: Colors.white,
+              onPressed: _centerOnUser,
+              child: const Icon(Icons.my_location, color: Colors.black87),
+            ),
+          ),
+
+          // --- 4. SİMÜLASYON UYARISI ---
+          if (isSimulationMode || _isLoadingLocation)
+            Positioned(
+              top: 60,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color: _isLoadingLocation ? Colors.blue : Colors.amber,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      const BoxShadow(color: Colors.black26, blurRadius: 4),
+                    ],
+                  ),
+                  child: Text(
+                    _isLoadingLocation
+                        ? "Calculating Location..."
+                        : "Simulation Mode (GPS Off)",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
