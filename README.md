@@ -9,7 +9,7 @@ QR ile kapı açma, oda servisi, spa randevusu, etkinlik takibi ve çok daha faz
 [![Flutter](https://img.shields.io/badge/Flutter-3.10+-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev)
 [![Firebase](https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
 [![Firestore](https://img.shields.io/badge/Cloud_Firestore-039BE5?style=for-the-badge&logo=firebase&logoColor=white)](https://firebase.google.com/products/firestore)
-[![License](https://img.shields.io/badge/Lisans-MIT-green?style=for-the-badge)](LICENSE)
+
 
 [🌐 Web Sitesi](https://berat-kaan-akcan.github.io/InnJoy_Website/) · [📲 APK İndir](https://berat-kaan-akcan.github.io/InnJoy_Website/InnJoy.apk) · [💬 Geri Bildirim](https://forms.gle/2sfGnK5VJ4hYPome7)
 
@@ -81,27 +81,38 @@ InnJoy/
 ├── lib/
 │   ├── main.dart                    # Uygulama giriş noktası
 │   ├── firebase_options.dart        # Firebase yapılandırması
-│   ├── config/                      # Servis ve yapılandırma dosyaları
 │   ├── models/                      # Veri modelleri
 │   │   ├── user_model.dart
 │   │   ├── menu_item_model.dart
-│   │   └── reservation_model.dart
+│   │   ├── reservation_model.dart
+│   │   └── location_model.dart
 │   ├── screens/
+│   │   ├── admin/                   # Admin paneli ve yönetim ekranları
+│   │   │   ├── edit/                # Hizmet düzenleme
+│   │   │   ├── restaurant/          # Restoran yönetimi
+│   │   │   └── room_service/        # Oda servisi yönetimi
 │   │   ├── auth/                    # Giriş, kayıt ve şifre sıfırlama
-│   │   ├── home/                    # Ana sayfa ve otel seçimi
-│   │   ├── admin/                   # Admin paneli ekranları
+│   │   ├── customer/                # Müşteri ekranları
 │   │   ├── dining/                  # Restoran ve menü ekranları
-│   │   ├── emergency/               # Acil durum ve harita
+│   │   ├── emergency/               # Acil durum ekranları
 │   │   ├── events_activities/       # Etkinlik yönetimi
+│   │   ├── home/                    # Ana sayfa ve otel seçimi
 │   │   ├── housekeeping/            # Kat hizmetleri
-│   │   ├── my_plans/                # Rezervasyon ve plan takibi
+│   │   ├── legal/                   # Yasal bilgiler
+│   │   ├── map/                     # Harita ekranı
 │   │   ├── payment/                 # Harcama takibi
 │   │   ├── profile/                 # Profil yönetimi
-│   │   ├── spa/                     # Spa hizmetleri
-│   │   └── room_service/            # Oda servisi
+│   │   ├── requests/                # Talep ekranları
+│   │   ├── room_service/            # Oda servisi
+│   │   └── services/                # Hizmet ekranları
 │   ├── services/                    # Firebase ve API servisleri
-│   ├── widgets/                     # Tekrar kullanılabilir bileşenler
-│   └── map/                         # Harita ekranı
+│   │   └── database/                # Veritabanı servisleri
+│   ├── utils/                       # Yardımcı araçlar
+│   │   ├── config/                  # Yapılandırma dosyaları
+│   │   └── dialogs/                 # Dialog'lar
+│   └── widgets/                     # Tekrar kullanılabilir bileşenler
+│       ├── admin/                   # Admin widget'ları
+│       └── common/                  # Ortak widget'lar
 ├── assets/
 │   ├── images/                      # Uygulama görselleri
 │   ├── avatars/                     # Kullanıcı avatarları
@@ -160,9 +171,14 @@ Firebase kurulumu yapmadan uygulamayı denemek isterseniz:
 
 Uygulamayı tüm özellikleriyle deneyimlemek için demo hesabını kullanabilirsiniz:
 
+| | |
+|---|---|
+| **📧 E-posta** | `appinnjoy@gmail.com` |
+| **🔒 Şifre** | `123456` |
+
 > ⚠️ **Uyarı:** Bu bir test hesabıdır. Gerçek kişisel bilgilerinizi paylaşmayın.
 
-**Deneyebileceğiniz özellikler:**
+**✨ Deneyebileceğiniz özellikler:**
 - 🔑 QR ile kapı açma ve dijital anahtar
 - 🍽️ Oda servisi siparişi ve takibi
 - 🛀 Spa randevusu alma
@@ -197,12 +213,6 @@ Uygulamayı tüm özellikleriyle deneyimlemek için demo hesabını kullanabilir
 [![Feedback](https://img.shields.io/badge/Geri_Bildirim-Google_Form-34A853?style=for-the-badge&logo=google&logoColor=white)](https://forms.gle/2sfGnK5VJ4hYPome7)
 
 </div>
-
----
-
-## 📄 Lisans
-
-Bu proje [MIT Lisansı](LICENSE) ile lisanslanmıştır.
 
 ---
 
