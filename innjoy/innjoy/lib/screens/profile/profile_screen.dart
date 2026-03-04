@@ -1,0 +1,848 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:login_page/services/auth.dart';
+import '../../widgets/auth_wrapper.dart';
+import 'change_password_screen.dart';
+import '../../utils/dialogs/custom_dialog.dart';
+import 'notifications_chose_screen.dart';
+import 'profile_edit_screen.dart';
+import 'help_support_screen.dart';
+
+import 'package:qr_flutter/qr_flutter.dart';
+import '../../services/database_service.dart';
+import '../../utils/responsive_utils.dart';
+
+class ProfileScreen extends StatefulWidget {
+  final bool isTabView;
+
+  const ProfileScreen({super.key, this.isTabView = false});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final user = FirebaseAuth.instance.currentUser;
+
+  String get userName {
+    if (user?.displayName != null && user!.displayName!.isNotEmpty) {
+      return user!.displayName!;
+    }
+    // E-posta'dan isim türet
+    if (user?.email != null) {
+      return user!.email!.split('@').first;
+    }
+    return 'Guest';
+  }
+
+  Stream<Map<String, dynamic>?> _getUserAccommodationStream() {
+    if (user == null) return Stream.value(null);
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .snapshots()
+        .map((snapshot) => snapshot.data());
+  }
+
+  String _monthName(int month) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return months[month - 1];
+  }
+
+  void _showWifiDialog(BuildContext context, String hotelName) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StreamBuilder<Map<String, dynamic>?>(
+          stream: DatabaseService().getHotelWifiInfo(hotelName),
+          builder: (context, snapshot) {
+            String ssid = 'Loading...';
+            String password = '...';
+            String encryption = 'WPA';
+
+            // Auto-generate if missing
+            if (snapshot.hasData && snapshot.data != null) {
+              final data = snapshot.data!;
+              ssid = data['ssid'] ?? 'Unknown network';
+              password = data['password'] ?? 'Not set';
+              encryption = data['encryption'] ?? 'WPA';
+            }
+
+            final qrData = 'WIFI:S:$ssid;T:$encryption;P:$password;;';
+
+            return Dialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+              ),
+              elevation: 0,
+              backgroundColor: Colors.transparent,
+              child: Container(
+                padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 24)),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Header Icon
+                    Container(
+                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 12)),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF0057FF), Color(0xFF00A3FF)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 16)),
+                      ),
+                      child: Icon(
+                        Icons.qr_code_2,
+                        color: Colors.white,
+                        size: ResponsiveUtils.iconSize(context) * (32 / 24),
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 16)),
+                    // Title
+                    Text(
+                      'Hotel WiFi QR Code',
+                      style: TextStyle(
+                        fontSize: ResponsiveUtils.sp(context, 20),
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1C1C1E),
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 8)),
+                    // Subtitle (Room/Hotel Name)
+                    Text(
+                      hotelName,
+                      style: TextStyle(fontSize: ResponsiveUtils.sp(context, 14), color: Colors.grey[600]),
+                      textAlign: TextAlign.center,
+                    ),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                    // QR Code
+                    Container(
+                      padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 16)),
+                        border: Border.all(
+                          color: Colors.grey.withValues(alpha: 0.2),
+                          width: ResponsiveUtils.wp(context, 1 / 375),
+                        ),
+                      ),
+                      child: QrImageView(
+                        data: qrData,
+                        version: QrVersions.auto,
+                        size: ResponsiveUtils.iconSize(context) * (200 / 24),
+                        backgroundColor: Colors.white,
+                        eyeStyle: const QrEyeStyle(
+                          eyeShape: QrEyeShape.square,
+                          color: Color(0xFF0057FF),
+                        ),
+                        dataModuleStyle: const QrDataModuleStyle(
+                          dataModuleShape: QrDataModuleShape.square,
+                          color: Color(0xFF1C1C1E),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                    // WiFi Details Text
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        vertical: ResponsiveUtils.spacing(context, 12),
+                        horizontal: ResponsiveUtils.spacing(context, 16),
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[50],
+                        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Network:",
+                                style: TextStyle(
+                                  fontSize: ResponsiveUtils.sp(context, 14),
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              SelectableText(
+                                ssid,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: ResponsiveUtils.sp(context, 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                "Password:",
+                                style: TextStyle(
+                                  fontSize: ResponsiveUtils.sp(context, 14),
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              SelectableText(
+                                password,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: ResponsiveUtils.sp(context, 14),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: ResponsiveUtils.spacing(context, 20)),
+                    // Close Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0057FF),
+                          foregroundColor: Colors.white,
+                          padding: EdgeInsets.symmetric(
+                            vertical: ResponsiveUtils.spacing(context, 14),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: Text(
+                          'Close',
+                          style: TextStyle(
+                            fontSize: ResponsiveUtils.sp(context, 16),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF6F7FB),
+      appBar: AppBar(
+        backgroundColor: const Color(0xFFF6F7FB),
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: widget.isTabView
+            ? null
+            : IconButton(
+                icon: const Icon(Icons.arrow_back, color: Colors.black87),
+                onPressed: () => Navigator.pop(context),
+              ),
+        automaticallyImplyLeading: !widget.isTabView,
+        title: Text(
+          'Profile',
+          style: TextStyle(
+            color: Colors.black87,
+            fontWeight: FontWeight.w600,
+            fontSize: ResponsiveUtils.sp(context, 18),
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined, color: Color(0xFF1677FF)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ProfileEditScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Profil Başlık Alanı
+            Container(
+              width: double.infinity,
+              color: const Color(0xFFF6F7FB),
+              padding: EdgeInsets.only(
+                bottom: ResponsiveUtils.spacing(context, 16),
+                left: ResponsiveUtils.spacing(context, 24),
+                right: ResponsiveUtils.spacing(context, 24),
+              ),
+              child: StreamBuilder<User?>(
+                stream: FirebaseAuth.instance.userChanges(),
+                builder: (context, snapshot) {
+                  final currentUser = snapshot.data ?? user;
+                  final displayName = currentUser?.displayName ?? 
+                      (currentUser?.email?.split('@').first ?? 'Guest');
+                  
+                  return Column(
+                    children: [
+                      // Profil Fotoğrafı
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ProfileEditScreen(),
+                            ),
+                          );
+                        },
+                        child: Stack(
+                          children: [
+                            Container(
+                              width: ResponsiveUtils.wp(context, 120 / 375),
+                              height: ResponsiveUtils.hp(context, 120 / 844),
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: DecorationImage(
+                                  image: currentUser?.photoURL != null
+                                      ? (currentUser!.photoURL!.startsWith('assets/')
+                                          ? AssetImage(currentUser.photoURL!) as ImageProvider
+                                          : NetworkImage(currentUser.photoURL!))
+                                      : const AssetImage('assets/avatars/default_avatar.png'),
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                              child: null,
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 2)), // Minimized spacing heavily as requested
+                      // İsim
+                      Text(
+                        displayName,
+                        style: TextStyle(
+                          fontSize: ResponsiveUtils.sp(context, 22),
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: ResponsiveUtils.spacing(context, 4)), // Increased from 2 to 4
+                      // E-posta
+                      Text(
+                        currentUser?.email ?? 'email@example.com',
+                        style: TextStyle(fontSize: ResponsiveUtils.sp(context, 14), color: Colors.grey[600]),
+                      ),
+                    ],
+                  );
+                },
+              ),
+            ),
+            // Kişisel Bilgiler
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Personal Information',
+                    style: TextStyle(fontSize: ResponsiveUtils.sp(context, 18), fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                  _InfoCard(
+                    children: [
+                      _InfoItem(
+                        icon: Icons.person_outline,
+                        label: 'Full Name',
+                        value: userName,
+                      ),
+                      Divider(height: 1),
+                      _InfoItem(
+                        icon: Icons.email_outlined,
+                        label: 'Email',
+                        value: user?.email ?? 'email@example.com',
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: ResponsiveUtils.spacing(context, 14)),
+
+            // Konaklama Bilgileri
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Accommodation Details',
+                    style: TextStyle(fontSize: ResponsiveUtils.sp(context, 18), fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                  StreamBuilder<Map<String, dynamic>?>(
+                    stream: _getUserAccommodationStream(),
+                    builder: (context, snapshot) {
+                      final data = snapshot.data;
+                      final hotelName = data?['hotelName'] ?? 'Not available';
+                      final roomNumber = data?['roomNumber'] ?? '-';
+                      final checkIn = data?['checkInDate'];
+                      final checkOut = data?['checkOutDate'];
+
+                      String checkInStr = '-';
+                      String checkOutStr = '-';
+
+                      if (checkIn != null) {
+                        final dt = checkIn is Timestamp
+                            ? checkIn.toDate()
+                            : DateTime.now();
+                        checkInStr =
+                            '${dt.day} ${_monthName(dt.month)} ${dt.year}';
+                      }
+                      if (checkOut != null) {
+                        final dt = checkOut is Timestamp
+                            ? checkOut.toDate()
+                            : DateTime.now();
+                        checkOutStr =
+                            '${dt.day} ${_monthName(dt.month)} ${dt.year}';
+                      }
+
+                      return Column(
+                        children: [
+                          _InfoCard(
+                            children: [
+                              _InfoItem(
+                                icon: Icons.hotel_outlined,
+                                label: 'Hotel',
+                                value: hotelName,
+                              ),
+                              const Divider(height: 1),
+                              _InfoItem(
+                                icon: Icons.door_front_door_outlined,
+                                label: 'Room Number',
+                                value: roomNumber,
+                              ),
+                              Divider(height: 1),
+                              _InfoItem(
+                                icon: Icons.calendar_today_outlined,
+                                label: 'Check-in Date',
+                                value: checkInStr,
+                              ),
+                              Divider(height: 1),
+                              _InfoItem(
+                                icon: Icons.event_outlined,
+                                label: 'Check-out Date',
+                                value: checkOutStr,
+                              ),
+                            ],
+                          ),
+                          SizedBox(height: ResponsiveUtils.spacing(context, 16)),
+                          // WiFi Connection Button
+                          InkWell(
+                            onTap: () {
+                              if (hotelName != 'Not available') {
+                                _showWifiDialog(context, hotelName);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Please check in to a hotel to view WiFi details',
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            child: Container(
+                              padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 16)),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: EdgeInsets.all(ResponsiveUtils.spacing(context, 10)),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFE3F2FD),
+                                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
+                                    ),
+                                    child: Icon(
+                                      Icons.wifi,
+                                      color: Color(0xFF1677FF),
+                                      size: ResponsiveUtils.iconSize(context) * (24 / 24),
+                                    ),
+                                  ),
+                                  SizedBox(width: ResponsiveUtils.spacing(context, 16)),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'WiFi Connection',
+                                          style: TextStyle(
+                                            fontSize: ResponsiveUtils.sp(context, 16),
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF1C1C1E),
+                                          ),
+                                        ),
+                                        SizedBox(height: ResponsiveUtils.spacing(context, 4)),
+                                        Text(
+                                          'Scan QR to connect',
+                                          style: TextStyle(
+                                            fontSize: ResponsiveUtils.sp(context, 13),
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const Icon(
+                                    Icons.chevron_right,
+                                    color: Colors.grey,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: ResponsiveUtils.spacing(context, 14)),
+
+            // Ayarlar ve Tercihler
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Settings',
+                    style: TextStyle(fontSize: ResponsiveUtils.sp(context, 18), fontWeight: FontWeight.w700),
+                  ),
+                  SizedBox(height: ResponsiveUtils.spacing(context, 12)),
+                  _SettingsCard(
+                    children: [
+                      _SettingsItem(
+                        icon: Icons.notifications_outlined,
+                        label: 'Notifications',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationsChoseScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      const Divider(height: 1),
+                      _SettingsItem(
+                        icon: Icons.language_outlined,
+                        label: 'Language',
+                        trailing: 'English',
+                        onTap: () {},
+                      ),
+                      const Divider(height: 1),
+                      _SettingsItem(
+                        icon: Icons.lock_outline,
+                        label: 'Change Password',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const ChangePasswordScreen(),
+                            ),
+                          );
+                        },
+                      ),
+
+                      const Divider(height: 1),
+                      _SettingsItem(
+                        icon: Icons.help_outline,
+                        label: 'Help & Support',
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const HelpSupportScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            SizedBox(height: ResponsiveUtils.spacing(context, 24)),
+
+            // Çıkış Yap Butonu
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 16)),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () async {
+                    final shouldLogout = await CustomDialog.show(
+                      context,
+                      title: 'Log Out',
+                      message: 'Are you sure you want to log out?',
+                      confirmText: 'Log Out',
+                      isDanger: true,
+                    );
+                    if (shouldLogout == true) {
+                      // Login sayfasının bulunduğu AuthWrapper'a yönlendir
+                      // Mevcut tüm sayfaları stack'ten temizle
+                      await Auth().signOut();
+                      if (context.mounted) {
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(
+                            builder: (context) => const AuthWrapper(),
+                          ),
+                          (route) => false,
+                        );
+                      }
+                    }
+                  },
+                  icon: const Icon(Icons.logout, color: Colors.red),
+                  label: const Text(
+                    'Log Out',
+                    style: TextStyle(
+                      color: Colors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    padding: EdgeInsets.symmetric(
+                      vertical: ResponsiveUtils.spacing(context, 14),
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Adaptif bottom spacing - küçük ekranlarda daha az boşluk
+            SizedBox(
+              height: ResponsiveUtils.isSmallScreen(context)
+                  ? ResponsiveUtils.spacing(context, 40)
+                  : ResponsiveUtils.isMediumScreen(context)
+                      ? ResponsiveUtils.spacing(context, 80)
+                      : ResponsiveUtils.spacing(context, 120),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _InfoCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _InfoItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _InfoItem({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 16), vertical: ResponsiveUtils.spacing(context, 14)),
+      child: Row(
+        children: [
+          Container(
+            width: ResponsiveUtils.wp(context, 40 / 375),
+            height: ResponsiveUtils.hp(context, 40 / 844),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE3F2FD),
+              borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
+            ),
+            child: Icon(icon, color: const Color(0xFF1677FF), size: ResponsiveUtils.iconSize(context) * (20 / 24)),
+          ),
+          SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(color: Colors.grey[600], fontSize: ResponsiveUtils.sp(context, 13)),
+                ),
+                SizedBox(height: ResponsiveUtils.spacing(context, 2)),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                    fontSize: ResponsiveUtils.sp(context, 15),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingsCard extends StatelessWidget {
+  final List<Widget> children;
+
+  const _SettingsCard({required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(children: children),
+    );
+  }
+}
+
+class _SettingsItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? trailing;
+  final VoidCallback onTap;
+
+  const _SettingsItem({
+    required this.icon,
+    required this.label,
+    this.trailing,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: EdgeInsets.symmetric(horizontal: ResponsiveUtils.spacing(context, 16), vertical: ResponsiveUtils.spacing(context, 14)),
+        child: Row(
+          children: [
+            Container(
+              width: ResponsiveUtils.wp(context, 40 / 375),
+              height: ResponsiveUtils.hp(context, 40 / 844),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F5F5),
+                borderRadius: BorderRadius.circular(ResponsiveUtils.spacing(context, 10)),
+              ),
+              child: Icon(icon, color: Colors.black54, size: ResponsiveUtils.iconSize(context) * (20 / 24)),
+            ),
+            SizedBox(width: ResponsiveUtils.spacing(context, 12)),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  fontSize: ResponsiveUtils.sp(context, 15),
+                ),
+              ),
+            ),
+            if (trailing != null) ...[
+              Text(
+                trailing!,
+                style: TextStyle(color: Colors.grey[600], fontSize: ResponsiveUtils.sp(context, 14)),
+              ),
+              SizedBox(width: ResponsiveUtils.spacing(context, 8)),
+            ],
+            Icon(Icons.chevron_right, color: Colors.grey[400]),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
