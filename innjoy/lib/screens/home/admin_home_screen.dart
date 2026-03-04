@@ -14,7 +14,7 @@ import '../admin/admin_requests_screen.dart';
 import '../admin/admin_housekeeping_screen.dart';
 import '../../widgets/common/custom_top_navigation_bar.dart';
 import '../../widgets/admin/admin_action_bar.dart';
-import '../edit/chose_edit_screen.dart';
+import '../admin/edit/chose_edit_screen.dart';
 import '../emergency/emergency_admin_screen.dart';
 import '../../widgets/admin/management_panel.dart';
 import '../../utils/responsive_utils.dart';

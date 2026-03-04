@@ -19,7 +19,7 @@ import '../../widgets/auth_wrapper.dart';
 import '../customer/my_plans_screen.dart';
 import '../requests/customer_requests_screen.dart';
 import '../payment/spending_tracker_screen.dart';
-import '../../map/map_screen.dart';
+import '../map/map_screen.dart';
 import 'admin_home_screen.dart';
 import '../../widgets/common/custom_top_navigation_bar.dart';
 import '../../widgets/admin/admin_action_bar.dart';

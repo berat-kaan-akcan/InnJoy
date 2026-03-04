@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../legal/legal_constants.dart';
 import '../legal/legal_document_screen.dart';
-import '../../map/map_screen.dart';
+import '../map/map_screen.dart';
 import 'package:latlong2/latlong.dart';
 import '../../utils/responsive_utils.dart';
 

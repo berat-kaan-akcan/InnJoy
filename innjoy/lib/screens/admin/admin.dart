@@ -16,3 +16,7 @@ export 'admin_guest_management_screen.dart';
 export 'admin_housekeeping_screen.dart';
 export 'admin_requests_screen.dart';
 export 'admin_room_management_screen.dart';
+
+// Edit screens
+export 'edit/chose_edit_screen.dart';
+export 'edit/chose_services_screen.dart';

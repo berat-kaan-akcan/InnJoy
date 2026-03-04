@@ -7,7 +7,7 @@ import 'package:geolocator/geolocator.dart'; // Konum paketi
 
 // Kendi proje yollar�n� kontrol et:
 import 'package:login_page/services/database_service.dart';
-import 'package:login_page/location/location_model.dart';
+import 'package:login_page/models/location_model.dart';
 import 'package:login_page/screens/emergency/full_map_screen.dart';
 import '../../utils/responsive_utils.dart';
 

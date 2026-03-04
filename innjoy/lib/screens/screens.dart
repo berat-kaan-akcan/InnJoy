@@ -17,6 +17,8 @@ export 'room_service/room_service_cart_screen.dart';
 export 'housekeeping/housekeeping_screen.dart';
 export 'requests/customer_requests_screen.dart';
 export 'profile/profile_screen.dart';
+export 'map/map_screen.dart';
+export 'customer/my_plans_screen.dart';
 
 
 

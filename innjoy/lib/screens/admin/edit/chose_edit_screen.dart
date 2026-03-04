@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import '../events_activities/admin_events_screen.dart';
-import '../services/spa_wellness/spa_management_screen.dart';
-import '../services/fitness/details/fitness_details_screen.dart';
-import '../admin/restaurant/restaurant_management_screen.dart';
-import '../admin/room_service/room_service_management_screen.dart';
-import '../admin/admin_housekeeping_screen.dart';
-import '../admin/admin_room_management_screen.dart';
-import '../admin/admin_requests_screen.dart';
-import '../../utils/responsive_utils.dart';
+import '../../events_activities/admin_events_screen.dart';
+import '../../services/spa_wellness/spa_management_screen.dart';
+import '../../services/fitness/details/fitness_details_screen.dart';
+import '../restaurant/restaurant_management_screen.dart';
+import '../room_service/room_service_management_screen.dart';
+import '../admin_housekeeping_screen.dart';
+import '../admin_room_management_screen.dart';
+import '../admin_requests_screen.dart';
+import '../../../utils/responsive_utils.dart';
 
 class ChoseEditScreen extends StatelessWidget {
   final String? hotelName;

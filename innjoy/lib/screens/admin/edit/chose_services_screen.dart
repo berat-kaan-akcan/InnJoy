@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/spa_wellness/spa_management_screen.dart';
-import '../services/fitness/details/fitness_details_screen.dart';
-import '../../utils/responsive_utils.dart';
+import '../../services/spa_wellness/spa_management_screen.dart';
+import '../../services/fitness/details/fitness_details_screen.dart';
+import '../../../utils/responsive_utils.dart';
 
 class ChoseServicesScreen extends StatelessWidget {
   final String hotelName;
