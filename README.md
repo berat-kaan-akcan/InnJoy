@@ -199,6 +199,7 @@ Uygulamayı tüm özellikleriyle deneyimlemek için demo hesabını kullanabilir
 | | İsim | Rol | LinkedIn |
 |:-:|------|------|----------|
 | 👨‍💻 | **Berat Kaan Akcan** | Geliştirici | [Profil](https://www.linkedin.com/in/berat-kaan-akcan-224781285/) |
+| 👨‍💻 | **Doğukan Direksiz** | Geliştirici | [Profil](https://www.linkedin.com/in/do%C4%9Fukan-direksiz-92aa6b334) |
 </div>
 
 ---
